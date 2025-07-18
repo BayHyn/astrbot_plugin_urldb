@@ -6,15 +6,15 @@ import json
 
 @register("urldb", "YourName", "一个可以配置域名并调用API的插件", "1.0.0")
 class URLDBPlugin(Star):
-    def __init__(self, context: Context,  config: AstrBotConfig):
+    def __init__(self, context: Context):
         super().__init__(context)
         # 默认配置，可以通过配置文件覆盖
         self.config = {
-            "api_domain": config.get("api_domain", ""),  # 默认的API域名
-            "api_token": config.get("api_token", ""),  # 默认的API域名
-            "timeout": config.get("timeout", 30),  # 默认的API域名
-            "max_results": config.get("max_results", 5),  # 默认的API域名
+            "api_domain": "https://api.example.com",
+            "api_endpoint": "/search",
+            "api_key": ""  # 如果需要API密钥
         }
+
     async def initialize(self):
         """插件初始化时加载配置"""
         try:
@@ -26,17 +26,17 @@ class URLDBPlugin(Star):
         except Exception as e:
             logger.warning(f"加载配置失败，使用默认配置: {e}")
 
-    @filter.regex(r"^(搜|找)")
+    @filter.at_me()
     async def handle_at_message(self, event: AstrMessageEvent):
         """处理@机器人的消息"""
         message_str = event.message_str.strip()
         user_name = event.get_sender_name()
         
         # 检查消息是否包含"帮我找"
-        if "搜" in message_str:
+        if "帮我找" in message_str:
             try:
                 # 提取搜索关键词（去掉"帮我找"）
-                search_query = message_str.replace("搜", "").strip()
+                search_query = message_str.replace("帮我找", "").strip()
                 if not search_query:
                     yield event.plain_result(f"@{user_name} 请告诉我你要找什么？")
                     return

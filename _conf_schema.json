@@ -1,0 +1,26 @@
+{
+    "api_domain": {
+      "description": "API域名配置 eg:https://api.example.com",
+      "type": "bool",
+      "default": false,
+      "hint": "如果添加api时报错，试着打开debug找问题"
+    },
+    "api_token": {
+      "description": "API密钥",
+      "type": "bool",
+      "default": true,
+      "hint": "需要秘钥进行认证"
+    },
+    "timeout": {
+      "description": "请求超时时间（秒）",
+      "type": "int",
+      "default": 30,
+      "hint": "请求超时时间（秒）"
+    },
+    "max_results": {
+      "description": "最大返回结果数量",
+      "type": "int",
+      "default": 5,
+      "hint": "最大返回结果数量"
+    }
+  }

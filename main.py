@@ -26,7 +26,7 @@ class URLDBPlugin(Star):
         except Exception as e:
             logger.warning(f"加载配置失败，使用默认配置: {e}")
 
-    @filter.regex(^(搜|全网搜))
+    @filter.regex(r"^帮我找.*")  
     async def handle_at_message(self, event: AstrMessageEvent):
         """处理@机器人的消息"""
         message_str = event.message_str.strip()

@@ -6,25 +6,16 @@ import json
 
 @register("urldb", "YourName", "一个可以配置域名并调用API的插件", "1.0.0")
 class URLDBPlugin(Star):
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, config: dict = None):
         super().__init__(context)
         # 默认配置，可以通过配置文件覆盖
         self.config = {
-            "api_domain": "https://api.example.com",
-            "api_endpoint": "/search",
-            "api_key": ""  # 如果需要API密钥
+            "api_domain": config.get("api_domain", "https://pan.l9.lc") if config else "https://pan.l9.lc",
+            "api_endpoint": "/api/public/resources/search",
+            "api_token": config.get("api_token", "") if config else "",  # 如果需要API密钥
+            "timeout": config.get("timeout", 30) if config else 30,
+            "max_results": config.get("max_results", 5) if config else 5
         }
-
-    async def initialize(self):
-        """插件初始化时加载配置"""
-        try:
-            # 尝试从配置文件加载配置
-            config = await self.context.get_config()
-            if config:
-                self.config.update(config)
-            logger.info(f"URLDB插件初始化完成，配置域名: {self.config['api_domain']}")
-        except Exception as e:
-            logger.warning(f"加载配置失败，使用默认配置: {e}")
 
     @filter.regex(r"^帮我找.*")  
     async def handle_at_message(self, event: AstrMessageEvent):
@@ -41,9 +32,11 @@ class URLDBPlugin(Star):
                     yield event.plain_result(f"@{user_name} 请告诉我你要找什么？")
                     return
                 
+                logger.info(f"开始搜索，关键词: {search_query}")
+                
                 # 调用配置的API
                 result = await self.call_api(search_query)
-                yield event.plain_result(f"@{user_name} 搜索结果：\n{result}")
+                yield event.plain_result(f"@{user_name} 找到了，\n{result}")
                 
             except Exception as e:
                 logger.error(f"调用API失败: {e}")
@@ -55,8 +48,9 @@ class URLDBPlugin(Star):
         
         # 准备请求参数
         params = {
-            "query": query,
-            "limit": 5  # 限制返回结果数量
+            "keyword": query,
+            "page": 1,
+            "page_size": self.config.get("max_results", 5)
         }
         
         headers = {
@@ -64,57 +58,100 @@ class URLDBPlugin(Star):
             "User-Agent": "AstrBot-URLDB-Plugin/1.0"
         }
         
-        # 如果有API密钥，添加到请求头
-        if self.config.get("api_key"):
-            headers["Authorization"] = f"Bearer {self.config['api_key']}"
+        # 只有在token不为空时才添加
+        if self.config.get("api_token"):
+            headers["X-API-Token"] = f"{self.config['api_token']}"
+            logger.info(f"已添加API Token到请求头")
+        else:
+            logger.warning("API Token为空，未添加到请求头")
         
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params, headers=headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return self.format_api_response(data)
-                else:
-                    raise Exception(f"API请求失败，状态码: {response.status}")
+        logger.info(f"正在调用API: {url}")
+        logger.info(f"请求参数: {params}")
+        logger.info(f"请求头: {headers}")
+        
+        try:
+            timeout = aiohttp.ClientTimeout(total=self.config.get("timeout", 30))
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url, params=params, headers=headers) as response:
+                    logger.info(f"API响应状态码: {response.status}")
+                    
+                    if response.status == 200:
+                        data = await response.json()
+                        logger.info(f"API响应数据: {data}")
+                        return self.format_api_response(data)
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"API请求失败，状态码: {response.status}, 响应内容: {error_text}")
+                        raise Exception(f"API请求失败，状态码: {response.status}, 响应: {error_text}")
+        except aiohttp.ClientError as e:
+            logger.error(f"网络请求错误: {e}")
+            raise Exception(f"网络连接失败: {e}")
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON解析错误: {e}")
+            raise Exception(f"API返回的数据格式错误: {e}")
+        except Exception as e:
+            logger.error(f"未知错误: {e}")
+            raise e
 
     def format_api_response(self, data: dict) -> str:
         """格式化API响应数据"""
         try:
-            # 这里需要根据实际API的响应格式来调整
-            # 假设API返回的是包含results字段的JSON
-            if "results" in data and data["results"]:
-                results = data["results"]
+            logger.info(f"开始格式化API响应: {data}")
+            logger.info(f"API响应数据类型: {type(data)}")
+            logger.info(f"API响应数据键: {list(data.keys()) if isinstance(data, dict) else '不是字典'}")
+            
+            # 根据实际API响应格式进行解析
+            if data.get("success") and data.get("data", {}).get("list"):
+                resources = data["data"]["list"]
+                total = data["data"].get("total", 0)
                 formatted = []
-                for i, result in enumerate(results[:5], 1):  # 最多显示5个结果
-                    title = result.get("title", "无标题")
-                    url = result.get("url", "")
-                    description = result.get("description", "无描述")
-                    formatted.append(f"{i}. {title}\n   {url}\n   {description}")
-                return "\n\n".join(formatted)
+                
+                for i, resource in enumerate(resources[:self.config.get("max_results", 5)], 1):
+                    title = resource.get("title", "无标题")
+                    url = resource.get("url", "")
+                    
+                    formatted.append(f"{i}. {title}\n   🔗 {url}")
+                
+                result = "\n\n".join(formatted)
+                if total > len(resources):
+                    result += f"\n\n📊 共找到 {total} 个结果，显示前 {len(resources)} 个"
+                
+                return result
             else:
-                return "没有找到相关结果"
+                # 如果不符合预期格式，显示错误信息
+                logger.warning(f"API响应格式不符合预期: {data}")
+                message = data.get("message", "没有找到相关结果")
+                return f"搜索结果: {message}"
         except Exception as e:
             logger.error(f"格式化API响应失败: {e}")
             return f"API返回数据: {json.dumps(data, ensure_ascii=False, indent=2)}"
 
-    @filter.command("urldb_config")
-    async def config_command(self, event: AstrMessageEvent):
-        """配置命令，用于设置API域名"""
-        message_str = event.message_str.strip()
+    @filter.command("urldb_test")
+    async def test_api(self, event: AstrMessageEvent):
+        """测试API连接"""
         user_name = event.get_sender_name()
         
-        if not message_str:
-            yield event.plain_result(f"@{user_name} 当前配置的API域名: {self.config['api_domain']}\n使用方法: /urldb_config <域名>")
-            return
-        
-        # 更新配置
-        self.config["api_domain"] = message_str
         try:
-            # 保存配置到文件
-            await self.context.set_config(self.config)
-            yield event.plain_result(f"@{user_name} 配置已更新，API域名设置为: {message_str}")
+            logger.info("开始测试API连接...")
+            result = await self.call_api("test")
+            yield event.plain_result(f"@{user_name} API测试成功！\n{result}")
         except Exception as e:
-            logger.error(f"保存配置失败: {e}")
-            yield event.plain_result(f"@{user_name} 配置更新失败: {e}")
+            logger.error(f"API测试失败: {e}")
+            yield event.plain_result(f"@{user_name} API测试失败: {e}")
+
+    @filter.command("urldb_show_config")
+    async def show_config(self, event: AstrMessageEvent):
+        """显示当前配置"""
+        user_name = event.get_sender_name()
+        
+        config_info = f"""@{user_name} 当前配置：
+- API域名: {self.config.get('api_domain', '未设置')}
+- API端点: {self.config.get('api_endpoint', '未设置')}
+- API Token: {'已设置' if self.config.get('api_token') else '未设置'}
+- 超时时间: {self.config.get('timeout', 30)}秒
+- 最大结果数: {self.config.get('max_results', 5)}"""
+        
+        yield event.plain_result(config_info)
 
     async def terminate(self):
         """插件销毁时的清理工作"""

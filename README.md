@@ -1,6 +1,6 @@
 # URLDB Plugin for AstrBot
 
-一个可以配置域名并调用API的AstrBot插件，支持被@时搜索功能。
+为 [老九网盘数据库系统](https://github.com/ctwj/urldb) 设计的AstrBot插件，支持被@时搜索功能。
 
 ## 功能特性
 

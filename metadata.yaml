@@ -2,4 +2,4 @@ name: urlDB # 这是你的插件的唯一识别名。
 desc: urlDB 搜索插件。 # 插件简短描述
 version: v0.5 # 插件版本号。格式：v1.1.1 或者 v1.1
 author: 老9 # 作者
-repo: https://github.com/ctwj/astrbot_plugin_urldbSoulter/helloworl # 插件的仓库地址
+repo: https://github.com/ctwj/astrbot_plugin_urldb # 插件的仓库地址

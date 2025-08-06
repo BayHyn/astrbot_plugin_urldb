@@ -2,13 +2,13 @@
 # 请根据你的实际API服务修改以下配置
 
 # API域名配置
-api_domain: "https://api.example.com"
+api_domain: "https://pan.l9.lc"
 
 # API端点路径
-api_endpoint: "/search"
+api_endpoint: "/api/public/resources/search"
 
 # API密钥（如果需要的话）
-api_key: ""
+api_token: ""
 
 # 其他可选配置
 # 请求超时时间（秒）

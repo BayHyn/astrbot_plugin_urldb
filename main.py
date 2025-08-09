@@ -4,11 +4,10 @@ from astrbot.api import logger
 import aiohttp
 import json
 
-@register("urldb", "YourName", "一个可以配置域名并调用API的插件", "1.0.0")
+@register("urldb", "ctwj", "老九网盘资源系统的自动回复插件", "1.0.0")
 class URLDBPlugin(Star):
     def __init__(self, context: Context, config: dict = None):
         super().__init__(context)
-        # 默认配置，可以通过配置文件覆盖
         self.config = {
             "api_domain": config.get("api_domain", "https://pan.l9.lc") if config else "https://pan.l9.lc",
             "api_endpoint": "/api/public/resources/search",

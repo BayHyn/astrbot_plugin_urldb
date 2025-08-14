@@ -1,5 +1,5 @@
 name: 老九网盘链接管理系统插件 # 这是你的插件的唯一识别名。
-desc: urlDB 搜索插件。 # 插件简短描述
+desc: 为 [老九网盘数据库系统](https://github.com/ctwj/urldb) 设计的AstrBot插件，支持被@时搜索功能。 # 插件简短描述
 version: v0.5 # 插件版本号。格式：v1.1.1 或者 v1.1
 author: 老九 # 作者
 repo: https://github.com/ctwj/astrbot_plugin_urldb # 插件的仓库地址

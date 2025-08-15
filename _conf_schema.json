@@ -5,6 +5,12 @@
       "default": "https://pan.l9.lc",
       "hint": "如果添加api时报错，试着打开debug找问题"
     },
+    "api_path": {
+      "description": "API路径配置 eg:/api/public/resources/search",
+      "type": "string",
+      "default": "/api/public/resources/search",
+      "hint": "如果添加api时报错，试着打开debug找问题"
+    },
     "api_token": {
       "description": "API密钥",
       "type": "string",

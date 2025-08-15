@@ -8,12 +8,14 @@ import json
 class URLDBPlugin(Star):
     def __init__(self, context: Context, config: dict = None):
         super().__init__(context)
+        if config is None:
+            config = {}
         self.config = {
-            "api_domain": config.get("api_domain", "https://pan.l9.lc") if config else "https://pan.l9.lc",
-            "api_endpoint": "/api/public/resources/search",
-            "api_token": config.get("api_token", "") if config else "",  # 如果需要API密钥
-            "timeout": config.get("timeout", 30) if config else 30,
-            "max_results": config.get("max_results", 5) if config else 5
+            "api_domain": config.get("api_domain", "https://pan.l9.lc"),
+            "api_endpoint": config.get("api_path", "/api/public/resources/search"),
+            "api_token": config.get("api_token", ""),  # 如果需要API密钥
+            "timeout": config.get("timeout", 30),
+            "max_results": config.get("max_results", 5)
         }
 
     @filter.regex(r"^帮我找.*")  
@@ -63,10 +65,6 @@ class URLDBPlugin(Star):
             logger.info(f"已添加API Token到请求头")
         else:
             logger.warning("API Token为空，未添加到请求头")
-        
-        logger.info(f"正在调用API: {url}")
-        logger.info(f"请求参数: {params}")
-        logger.info(f"请求头: {headers}")
         
         try:
             timeout = aiohttp.ClientTimeout(total=self.config.get("timeout", 30))

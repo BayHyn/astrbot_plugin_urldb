@@ -7,6 +7,9 @@
 @机器人 帮我找xxx
 ```
 
+配置说明：
+https://ecn5khs4t956.feishu.cn/wiki/Q33ZwqIaTivvyLkSGzAcg0denyb?from=from_copylink
+
 系统已稳定，不再提供测试环境
 功能简单，可自行fork，修改为自己需要的逻辑
 
